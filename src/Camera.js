@@ -10,6 +10,7 @@ const Camera = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [notification, setNotification] = useState('');
   const [recordingTime, setRecordingTime] = useState(0);
+  const [photoData, setPhotoData] = useState(null);
   const recordingIntervalRef = useRef(null);
   const navigate = useNavigate();
 
@@ -100,7 +101,13 @@ const Camera = () => {
     const context = canvasRef.current.getContext('2d');
     context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
     const dataUrl = canvasRef.current.toDataURL('image/png');
-    const blob = await fetch(dataUrl).then(res => res.blob());
+    setPhotoData(dataUrl);
+  };
+
+  const uploadPhoto = async () => {
+    if (!photoData) return;
+
+    const blob = await fetch(photoData).then(res => res.blob());
     const file = new File([blob], 'photo.png', { type: 'image/png' });
 
     const formData = new FormData();
@@ -114,6 +121,7 @@ const Camera = () => {
         }
       });
       setNotification('Photo uploaded successfully!');
+      setPhotoData(null); // Clear photo data after uploading
       console.log('Photo uploaded:', res.data);
     } catch (err) {
       setNotification('Error uploading photo. Please try again.');
@@ -152,13 +160,24 @@ const Camera = () => {
       <div className="bg-white shadow-md rounded-lg p-6 mt-12">
         <video ref={videoRef} autoPlay className="rounded-lg border-2 border-gray-300" />
         <canvas ref={canvasRef} width="640" height="480" className="hidden"></canvas>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-row gap-4">
           <button
             onClick={takePhoto}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Take Photo
           </button>
+          {photoData && (
+            <div className="mt-4 flex flex-col items-center">
+              <img src={photoData} alt="Captured" className="border-2 border-gray-300 rounded-lg" />
+              <button
+                onClick={uploadPhoto}
+                className="mt-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Upload Photo
+              </button>
+            </div>
+          )}
           {isRecording ? (
             <>
               <button
